@@ -5,77 +5,233 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Civilization 3D</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            background: #1a1a1a;
-            color: #fff;
-            overflow: hidden;
-        }
-        #canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1a1a1a; color: #fff; overflow: hidden; font-family: Arial, sans-serif; }
         #ui {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px 20px;
-            border: 2px solid #4a9eff;
-            border-radius: 5px;
-            min-width: 200px;
+            position: absolute; bottom: 20px; left: 20px;
+            background: rgba(0,0,0,0.8); padding: 15px 20px;
+            border: 2px solid #4a9eff; border-radius: 5px; min-width: 200px;
         }
-        #turnInfo {
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
+        #turnInfo { font-size: 16px; margin-bottom: 10px; }
         #nextTurnBtn {
-            background: #4a9eff;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 14px;
-            width: 100%;
+            background: #4a9eff; color: #fff; border: none;
+            padding: 10px 20px; border-radius: 3px; cursor: pointer;
+            font-size: 14px; width: 100%;
         }
-        #nextTurnBtn:hover {
-            background: #357abd;
-        }
+        #nextTurnBtn:hover { background: #357abd; }
         #selectedUnit {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px 20px;
-            border: 2px solid #4a9eff;
-            border-radius: 5px;
-            min-width: 200px;
-            display: none;
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(0,0,0,0.8); padding: 15px 20px;
+            border: 2px solid #4a9eff; border-radius: 5px;
+            min-width: 200px; display: none;
         }
-        .info-line {
-            font-size: 14px;
-            margin: 5px 0;
+        .info-line { font-size: 14px; margin: 5px 0; }
+        #loading {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px; color: #4a9eff;
         }
     </style>
 </head>
 <body>
-    <div id="selectedUnit">
+    <div id="loading">Loading...</div>
+    <div id="selectedUnit" style="display:none">
         <div class="info-line"><strong>Selected Unit</strong></div>
         <div class="info-line">Type: <span id="unitType">-</span></div>
         <div class="info-line">Pos: <span id="unitPos">-</span></div>
+        <div class="info-line">Moves: <span id="unitMoves">1</span> left</div>
     </div>
     <div id="ui">
         <div id="turnInfo">Turn: <span id="turnNumber">1</span></div>
-        <button id="nextTurnBtn">Next Turn</button>
+        <button id="nextTurnBtn">Next Turn (Enter)</button>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/three@r128/build/three.min.js"></script>
-    <script type="module" src="main.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script>
+    window.addEventListener('load', function() {
+        if (typeof THREE === 'undefined') {
+            document.getElementById('loading').innerHTML = 'Error: Could not load 3D library.<br>Check your internet connection.';
+            return;
+        }
+        document.getElementById('loading').style.display = 'none';
+        startGame();
+    });
+
+    function startGame() {
+        // Scene setup
+        var scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a3a52);
+
+        var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 40, 35);
+        camera.lookAt(0, 0, 0);
+
+        var renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        var sun = new THREE.DirectionalLight(0xffffff, 0.8);
+        sun.position.set(100, 150, 100);
+        sun.castShadow = true;
+        scene.add(sun);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+
+        // Map
+        var MAP_W = 30;
+        var MAP_H = 30;
+        var tiles = {};
+
+        for (var x = 0; x < MAP_W; x++) {
+            for (var z = 0; z < MAP_H; z++) {
+                var geo = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 6);
+                var th = Math.sin(x * 0.3) * 0.4 + Math.cos(z * 0.3) * 0.4;
+                var col = 0x2d5016;
+                if (th > 0.3) col = 0x8b7355;
+                else if (th > 0) col = 0x4a7c4e;
+                var mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.8 });
+                var tile = new THREE.Mesh(geo, mat);
+                tile.castShadow = true;
+                tile.receiveShadow = true;
+                var px = x - MAP_W / 2;
+                var pz = z - MAP_H / 2;
+                tile.position.set(px, th * 0.5, pz);
+                scene.add(tile);
+                tiles[x + ',' + z] = { mesh: tile, pos: tile.position.clone(), x: x, z: z };
+            }
+        }
+
+        function getTile(x, z) { return tiles[x + ',' + z] || null; }
+        function validTile(x, z) { return x >= 0 && x < MAP_W && z >= 0 && z < MAP_H; }
+
+        // Unit
+        var units = [];
+        var selectedUnit = null;
+        var turn = 1;
+
+        function createUnit(x, z) {
+            var geo = new THREE.ConeGeometry(0.3, 1, 8);
+            var mat = new THREE.MeshStandardMaterial({ color: 0xff4444, roughness: 0.6 });
+            var mesh = new THREE.Mesh(geo, mat);
+            mesh.castShadow = true;
+            var t = getTile(x, z);
+            mesh.position.copy(t.pos);
+            mesh.position.y += 0.8;
+            scene.add(mesh);
+            var unit = { mesh: mesh, x: x, z: z, movesLeft: 1, type: 'Warrior' };
+            units.push(unit);
+            return unit;
+        }
+
+        selectedUnit = createUnit(5, 5);
+        updateUI();
+
+        function moveUnit(unit, dx, dz) {
+            if (!unit || unit.movesLeft <= 0) return;
+            var nx = unit.x + dx;
+            var nz = unit.z + dz;
+            if (!validTile(nx, nz)) return;
+            unit.x = nx;
+            unit.z = nz;
+            unit.movesLeft--;
+            var t = getTile(nx, nz);
+            unit.mesh.position.copy(t.pos);
+            unit.mesh.position.y += 0.8;
+            updateUI();
+        }
+
+        function nextTurn() {
+            turn++;
+            units.forEach(function(u) { u.movesLeft = 1; });
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('turnNumber').textContent = turn;
+            if (selectedUnit) {
+                document.getElementById('selectedUnit').style.display = 'block';
+                document.getElementById('unitType').textContent = selectedUnit.type;
+                document.getElementById('unitPos').textContent = '(' + selectedUnit.x + ', ' + selectedUnit.z + ')';
+                document.getElementById('unitMoves').textContent = selectedUnit.movesLeft;
+            }
+        }
+
+        // Camera controls
+        var camDist = 50;
+        var camAngle = 0;
+        var camHeight = 40;
+        var camTargetX = 0;
+        var camTargetZ = 0;
+
+        function updateCamera() {
+            camera.position.x = camTargetX + Math.sin(camAngle) * camDist;
+            camera.position.y = camHeight;
+            camera.position.z = camTargetZ + Math.cos(camAngle) * camDist;
+            camera.lookAt(camTargetX, 0, camTargetZ);
+        }
+
+        document.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            camDist += e.deltaY * 0.05;
+            camDist = Math.max(10, Math.min(100, camDist));
+            updateCamera();
+        }, { passive: false });
+
+        document.addEventListener('mousemove', function(e) {
+            if (e.buttons === 2) {
+                camAngle += e.movementX * 0.005;
+                camHeight -= e.movementY * 0.2;
+                camHeight = Math.max(10, Math.min(80, camHeight));
+                updateCamera();
+            }
+        });
+
+        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+
+        // Keyboard movement
+        document.addEventListener('keydown', function(e) {
+            switch(e.key) {
+                case 'ArrowUp':    case 'w': moveUnit(selectedUnit, 0, -1); break;
+                case 'ArrowDown':  case 's': moveUnit(selectedUnit, 0, 1); break;
+                case 'ArrowLeft':  case 'a': moveUnit(selectedUnit, -1, 0); break;
+                case 'ArrowRight': case 'd': moveUnit(selectedUnit, 1, 0); break;
+                case 'Enter': nextTurn(); break;
+            }
+        });
+
+        // Next turn button
+        document.getElementById('nextTurnBtn').addEventListener('click', nextTurn);
+
+        // Click to select units
+        var raycaster = new THREE.Raycaster();
+        var mouse = new THREE.Vector2();
+        document.addEventListener('click', function(e) {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            var meshes = units.map(function(u) { return u.mesh; });
+            var hits = raycaster.intersectObjects(meshes);
+            if (hits.length > 0) {
+                var u = units.find(function(u) { return u.mesh === hits[0].object; });
+                if (u) { selectedUnit = u; updateUI(); }
+            }
+        });
+
+        // Resize
+        window.addEventListener('resize', function() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Render loop
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+    }
+    </script>
 </body>
 </html>
