@@ -37,8 +37,8 @@ export default class Map {
         tile.castShadow = true;
         tile.receiveShadow = true;
 
-        const posX = x * 1.0 - width / 2;
-        const posZ = z * 1.0 - height / 2;
+        const posX = x * 1.0 - this.width / 2;
+        const posZ = z * 1.0 - this.height / 2;
         tile.position.set(posX, height * 0.5, posZ);
 
         this.scene.add(tile);
