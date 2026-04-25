@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Civilization 3D</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            overflow: hidden;
+        }
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        #ui {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 20px;
+            border: 2px solid #4a9eff;
+            border-radius: 5px;
+            min-width: 200px;
+        }
+        #turnInfo {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        #nextTurnBtn {
+            background: #4a9eff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+        }
+        #nextTurnBtn:hover {
+            background: #357abd;
+        }
+        #selectedUnit {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 20px;
+            border: 2px solid #4a9eff;
+            border-radius: 5px;
+            min-width: 200px;
+            display: none;
+        }
+        .info-line {
+            font-size: 14px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="selectedUnit">
+        <div class="info-line"><strong>Selected Unit</strong></div>
+        <div class="info-line">Type: <span id="unitType">-</span></div>
+        <div class="info-line">Pos: <span id="unitPos">-</span></div>
+    </div>
+    <div id="ui">
+        <div id="turnInfo">Turn: <span id="turnNumber">1</span></div>
+        <button id="nextTurnBtn">Next Turn</button>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
